@@ -27,37 +27,115 @@ ancienne version:
 - **Git** ([Télécharger](https://git-scm.com/))
 - **Compte Neon.tech** pour la base de données PostgreSQL
 
-Une fois que vous avez clonez le projet, veuillez creez une base de données dans votre compte Neon.tech et copier la string de connection.
-Une string similaire a ceci:
-`postgresql://neondb_owner:***************@ep-rapid-sky-ad5triop-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require`
+### Configuration
 
-Dans la root du projet, veuillez creer une fichier `.env` et le remplir comme ceci-ci:
-
-```
-# ===== BASE DE DONNÉES NEON/POSTGRESQL =====
-DATABASE_URL = "[votre string ici]"
-```
-
-Une fois faite, vous pouvez le lancer:
-
+1. **Cloner le projet**
 ```bash
-# Installation
+git clone https://github.com/your-username/portfolio.git
+cd portfolio
+```
+
+2. **Installer les dépendances**
+```bash
 npm install
+```
+
+3. **Configurer l'environnement**
+```bash
+# Copier le fichier d'exemple
+cp env.example .env
+
+# Éditer le fichier .env avec vos configurations
+```
+
+4. **Configurer la base de données**
+```bash
+# Générer le client Prisma
 npx prisma generate
+
+# Appliquer les migrations
 npx prisma db push
 
-# Lancer l'application
+# Créer un utilisateur admin (optionnel)
+node scripts/createAdmin.js
+```
+
+5. **Lancer l'application**
+```bash
 npm run dev
 ```
 
+### Variables d'environnement
+
+Copiez `env.example` vers `.env` et configurez :
+
+```env
+# Base de données PostgreSQL
+DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require"
+
+# Clé secrète JWT (générez une clé forte)
+JWT_SECRET="your-super-secret-jwt-key-here-minimum-32-characters"
+
+# Environnement
+NODE_ENV="development"
+```
+
+## 🔐 Authentification et Sécurité
+
+### Fonctionnalités de sécurité implémentées
+
+- **Authentification JWT** avec cookies HttpOnly sécurisés
+- **Middleware de protection** des routes admin
+- **Validation des entrées** avec Zod
+- **Journalisation sécurisée** sans fuite de données sensibles
+- **Contrôle d'accès** basé sur les rôles
+- **Protection CSRF** avec cookies SameSite=Strict
+
+### Endpoints d'authentification
+
+```bash
+# Connexion
+POST /api/auth/login
+{
+  "email": "admin@portfolio.com",
+  "password": "admin123"
+}
+
+# Déconnexion
+POST /api/auth/logout
+```
+
+### Tests
+
+```bash
+# Lancer les tests
+npm test
+
+# Tests d'authentification
+node tests/auth.test.js
+
+# Tests des projets
+node tests/projects.test.js
+```
+
+## 📚 Documentation API
+
+- **OpenAPI** : `docs/openapi.yaml`
+- **Collection Postman** : `Portfolio-API.postman_collection.json`
+- **Journal de tests** : `docs/TEST_LOG.md`
+
+## 🚀 Déploiement
+
 L'application sera disponible sur `http://localhost:3000`
 
-Pour pouvez faire des tests avec l'aide du fichier `api.http` dans `./tests/`
+**Compte admin par défaut :**
+- Email: `admin@portfolio.com`
+- Mot de passe: `admin123`
 
-
-**Liens utile : npx prisma studio**
-admin@portfolio.com
-admin123
+**Outils utiles :**
+- `npx prisma studio` - Interface de gestion de la base de données
+- `npm run build` - Build de production
+- `npm run start` - Serveur de production
 
 ## Architecture technique
 

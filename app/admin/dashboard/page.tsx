@@ -80,8 +80,8 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     // Vérifier si l'utilisateur est connecté
-    const token = localStorage.getItem('adminToken');
-    if (!token) {
+    const user = localStorage.getItem('adminUser');
+    if (!user) {
       router.push('/');
       return;
     }
@@ -91,21 +91,17 @@ export default function AdminDashboard() {
 
   const fetchProjects = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
-      if (!token) {
+      const user = localStorage.getItem('adminUser');
+      if (!user) {
         router.push('/');
         return;
       }
 
-      const response = await fetch('/api/projects', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      // Le token est maintenant géré automatiquement par les cookies
+      const response = await fetch('/api/projects');
 
-      if (response.status === 401) {
-        // Token invalide, rediriger vers la connexion
-        localStorage.removeItem('adminToken');
+      if (response.status === 401 || response.status === 403) {
+        // Session expirée ou accès non autorisé, rediriger vers la connexion
         localStorage.removeItem('adminUser');
         router.push('/');
         return;
@@ -125,10 +121,19 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminUser');
-    router.push('/');
+  const handleLogout = async () => {
+    try {
+      // Appeler l'endpoint de déconnexion pour supprimer le cookie
+      await fetch('/api/auth/logout', {
+        method: 'POST'
+      });
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+    } finally {
+      // Nettoyer le localStorage
+      localStorage.removeItem('adminUser');
+      router.push('/');
+    }
   };
 
   const handleAddProject = () => {
@@ -161,21 +166,17 @@ export default function AdminDashboard() {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce projet ?')) return;
 
     try {
-      const token = localStorage.getItem('adminToken');
-      if (!token) {
+      const user = localStorage.getItem('adminUser');
+      if (!user) {
         router.push('/');
         return;
       }
 
       const response = await fetch(`/api/projects/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        method: 'DELETE'
       });
 
-      if (response.status === 401) {
-        localStorage.removeItem('adminToken');
+      if (response.status === 401 || response.status === 403) {
         localStorage.removeItem('adminUser');
         router.push('/');
         return;
@@ -195,8 +196,8 @@ export default function AdminDashboard() {
     e.preventDefault();
     
     try {
-      const token = localStorage.getItem('adminToken');
-      if (!token) {
+      const user = localStorage.getItem('adminUser');
+      if (!user) {
         router.push('/');
         return;
       }
@@ -210,14 +211,12 @@ export default function AdminDashboard() {
       const response = await fetch(url, {
         method,
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(formData)
       });
 
-      if (response.status === 401) {
-        localStorage.removeItem('adminToken');
+      if (response.status === 401 || response.status === 403) {
         localStorage.removeItem('adminUser');
         router.push('/');
         return;

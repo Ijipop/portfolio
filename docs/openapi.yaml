@@ -1,0 +1,477 @@
+openapi: 3.0.3
+info:
+  title: Portfolio API
+  description: |
+    API REST pour la gestion d'un portfolio de projets avec authentification JWT sécurisée.
+    
+    ## Authentification
+    L'API utilise des cookies HttpOnly sécurisés pour l'authentification JWT.
+    
+    ## Sécurité
+    - Cookies HttpOnly, Secure, SameSite=Strict
+    - Validation des entrées avec Zod
+    - Journalisation sécurisée
+    - Protection CSRF
+    - Contrôle d'accès basé sur les rôles
+    
+  version: 1.0.0
+  contact:
+    name: Portfolio API Support
+    email: support@portfolio.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000/api
+    description: Serveur de développement
+  - url: https://your-domain.com/api
+    description: Serveur de production
+
+paths:
+  /auth/login:
+    post:
+      summary: Connexion utilisateur
+      description: Authentifie un utilisateur et retourne un cookie sécurisé
+      tags:
+        - Authentification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: admin@portfolio.com
+                password:
+                  type: string
+                  example: admin123
+      responses:
+        '200':
+          description: Connexion réussie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Connexion réussie
+                  user:
+                    $ref: '#/components/schemas/User'
+          headers:
+            Set-Cookie:
+              description: Cookie d'authentification sécurisé
+              schema:
+                type: string
+                example: auth-token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict
+        '400':
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Identifiants incorrects
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      summary: Déconnexion utilisateur
+      description: Déconnecte l'utilisateur et supprime le cookie d'authentification
+      tags:
+        - Authentification
+      responses:
+        '200':
+          description: Déconnexion réussie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Déconnexion réussie
+
+  /projects:
+    get:
+      summary: Récupérer tous les projets
+      description: Retourne la liste de tous les projets (accès public)
+      tags:
+        - Projets
+      responses:
+        '200':
+          description: Liste des projets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
+                  message:
+                    type: string
+                    example: "3 project(s) trouvé(s)"
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      summary: Créer un nouveau projet
+      description: Crée un nouveau projet (authentification admin requise)
+      tags:
+        - Projets
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectInput'
+      responses:
+        '201':
+          description: Projet créé avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Project'
+                  message:
+                    type: string
+                    example: Project créé avec succès
+        '400':
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '403':
+          description: Accès non autorisé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /projects/{id}:
+    get:
+      summary: Récupérer un projet par ID
+      description: Retourne un projet spécifique par son ID
+      tags:
+        - Projets
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        '200':
+          description: Projet trouvé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Project'
+                  message:
+                    type: string
+                    example: Project trouvé
+        '404':
+          description: Projet non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Modifier un projet
+      description: Met à jour un projet existant (authentification admin requise)
+      tags:
+        - Projets
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectInput'
+      responses:
+        '200':
+          description: Projet modifié avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Project'
+                  message:
+                    type: string
+                    example: Project modifié avec succès
+        '400':
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '403':
+          description: Accès non autorisé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Projet non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Supprimer un projet
+      description: Supprime un projet (authentification admin requise)
+      tags:
+        - Projets
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        '200':
+          description: Projet supprimé avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Project \"Mon Projet\" supprimé avec succès"
+        '403':
+          description: Accès non autorisé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Projet non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: auth-token
+      description: Cookie d'authentification JWT sécurisé
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        email:
+          type: string
+          format: email
+          example: admin@portfolio.com
+        name:
+          type: string
+          example: Admin User
+        role:
+          type: string
+          example: admin
+      required:
+        - id
+        - email
+        - name
+        - role
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Mon Portfolio Web
+        description:
+          type: string
+          example: Un portfolio moderne développé avec Next.js et Material-UI
+        technologies:
+          type: string
+          example: Next.js, React, TypeScript, Material-UI
+        status:
+          type: string
+          example: Terminé
+        url:
+          type: string
+          nullable: true
+          example: https://github.com/user/portfolio
+        imageUrl:
+          type: string
+          nullable: true
+          example: /imgs/portfolio-screenshot.png
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+      required:
+        - id
+        - name
+        - description
+        - technologies
+        - status
+        - createdAt
+        - updatedAt
+
+    ProjectInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Mon Portfolio Web
+        description:
+          type: string
+          minLength: 1
+          maxLength: 500
+          example: Un portfolio moderne développé avec Next.js et Material-UI
+        technologies:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: Next.js, React, TypeScript, Material-UI
+        status:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: Terminé
+        url:
+          type: string
+          format: uri
+          nullable: true
+          example: https://github.com/user/portfolio
+        imageUrl:
+          type: string
+          format: uri
+          nullable: true
+          example: /imgs/portfolio-screenshot.png
+      required:
+        - name
+        - description
+        - technologies
+        - status
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: Erreur lors de la récupération des projets
+      required:
+        - success
+        - error
+
+    ValidationError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: Données invalides
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: name
+              message:
+                type: string
+                example: Le nom est requis
+      required:
+        - success
+        - error
+        - details
+
+tags:
+  - name: Authentification
+    description: Endpoints pour l'authentification des utilisateurs
+  - name: Projets
+    description: Endpoints CRUD pour la gestion des projets
