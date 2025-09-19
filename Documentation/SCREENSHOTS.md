@@ -89,9 +89,12 @@ Ce document contient toutes les captures d'écran nécessaires pour démontrer l
 **Où** : DevTools → Network → Headers
 **Vérifications** :
 - ✅ `Set-Cookie` avec attributs sécurisés
-- ✅ Headers `x-user-email` et `x-user-role`
+![setcookie](Screenshot/setcookie.png)
 
+- ✅ Headers `x-user-email` et `x-user-role`
+![x](Screenshot/x.png)
 ---
+
 
 ## 4. Documentation & Tests
 
@@ -99,22 +102,37 @@ Ce document contient toutes les captures d'écran nécessaires pour démontrer l
 **Fichier** : `Portfolio-API.postman_collection.json`
 **Vérifications** :
 - ✅ Toutes les routes configurées
+![postman](Screenshot/postman.png)
+
 - ✅ Variables d'environnement
+![var](Screenshot/variable.png)
+
 - ✅ Tests automatisés
+![test](Screenshot/test.png)
 
 ### 4.2 Documentation OpenAPI
 **Fichier** : `docs/openapi.yaml`
 **Vérifications** :
 - ✅ Endpoints documentés
+![end](Screenshot/endpoint.png)
+
 - ✅ Schémas de validation
+![sch](Screenshot/schema.png)
+
 - ✅ Codes de statut HTTP
+![http](Screenshot/http.png)
 
 ### 4.3 Tests automatisés
 **Fichiers** : `tests/auth.test.js`, `tests/projects.test.js`
 **Vérifications** :
 - ✅ Tests de connexion
+![testcon](Screenshot/testcon.png)
+
 - ✅ Tests de protection des routes
+![prot](Screenshot/prot.png)
+
 - ✅ Tests de validation
+![valid](Screenshot/valid.png)
 
 ---
 
@@ -149,25 +167,18 @@ Ce document contient toutes les captures d'écran nécessaires pour démontrer l
 - [ ] Logs sans secrets, niveau INFO/ERROR
 - [ ] .env.example complet, secrets non commit
 
+## 7  Plan de tests — gabarit à inclure
 ### ✅ Plan de Tests
 | Cas | Pré-conditions | Requête | Attendu |
 |-----|----------------|---------|---------|
-| Login valide | User existe | POST /api/auth/login | 200 + cookie |
+| Login valide | User existe | POST /api/auth/login | 200 + cookie/JWT |
 | Login invalide | — | Id/Pwd faux | 401 |
-| Accès protégé sans auth | — | GET /api/projects | 401 |
-| Accès protégé rôle ok | Session admin | GET /api/projects | 200 |
+| Session absente | — | GET /api/auth/me | 401 |
+| Accès protégé sans auth | — | POST /api/projects | 403 |
+| Accès protégé rôle insuffisant | Session user | POST /api/projects | 403 |
+| Accès protégé rôle ok | Session admin | POST /api/projects | 201 |
 | Logout | Session active | POST /api/auth/logout | 200 |
+| Expiration | TTL dépassé | Ressource protégée | 401 |
 
 ---
 
-## 📝 Instructions pour les Captures
-
-1. **Prenez les captures dans l'ordre indiqué**
-2. **Incluez les logs de la console dans chaque capture**
-3. **Montrez les codes de statut HTTP (200, 401, 403)**
-4. **Vérifiez que les cookies sont bien HttpOnly**
-5. **Démontrez le flux complet : login → accès → logout**
-
----
-
-*Ce document accompagne le README principal et démontre visuellement le bon fonctionnement de l'authentification JWT selon les exigences du Lab2.*

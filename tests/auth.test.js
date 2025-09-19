@@ -12,7 +12,7 @@
 const baseUrl = 'http://localhost:3000/api';
 
 // Tests de connexion
-describe('🔐 Tests d\'authentification', () => {
+describe('Tests d\'authentification', () => {
   
   test('Connexion avec identifiants valides', async () => {
     const response = await fetch(`${baseUrl}/auth/login`, {

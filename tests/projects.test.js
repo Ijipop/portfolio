@@ -32,7 +32,7 @@ async function getAuthToken() {
   return null;
 }
 
-describe('📁 Tests des projets', () => {
+describe('Tests des projets', () => {
   
   test('Récupérer tous les projets (accès public)', async () => {
     const response = await fetch(`${baseUrl}/projects`);

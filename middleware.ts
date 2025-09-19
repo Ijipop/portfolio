@@ -60,6 +60,11 @@ function extractToken(request: NextRequest): string | null {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Ignorer les requêtes DevTools de Chrome
+  if (pathname.startsWith('/.well-known/')) {
+    return NextResponse.next();
+  }
+
   // Routes protégées (admin uniquement)
   const protectedRoutes = ['/admin', '/api/auth/me'];
   
