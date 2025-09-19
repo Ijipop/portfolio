@@ -27,7 +27,19 @@ function logEvent(level: 'INFO' | 'ERROR', message: string, userEmail?: string, 
   console.log(`[${level}] ${JSON.stringify(logEntry)}`);
 }
 
-// GET /api/projects - Obtenir tous les projects
+// Fonction pour vérifier l'authentification
+function verifyAuth(request: NextRequest): { isAuthenticated: boolean; userEmail?: string; userRole?: string } {
+  const userEmail = request.headers.get('x-user-email');
+  const userRole = request.headers.get('x-user-role');
+  
+  if (!userEmail || userRole !== 'admin') {
+    return { isAuthenticated: false };
+  }
+  
+  return { isAuthenticated: true, userEmail, userRole };
+}
+
+// GET /api/projects - Obtenir tous les projects (accès public)
 export async function GET()
 {
 	try
@@ -69,11 +81,10 @@ export async function POST(request: NextRequest)
 	try
 	{
 		// Vérifier l'authentification
-		const userEmail = request.headers.get('x-user-email');
-		const userRole = request.headers.get('x-user-role');
+		const auth = verifyAuth(request);
 		
-		if (!userEmail || userRole !== 'admin') {
-			logEvent('ERROR', 'Unauthorized project creation attempt', userEmail || undefined, 'CREATE');
+		if (!auth.isAuthenticated) {
+			logEvent('ERROR', 'Unauthorized project creation attempt', auth.userEmail, 'CREATE');
 			return NextResponse.json(
 				{
 					success: false,
@@ -90,7 +101,7 @@ export async function POST(request: NextRequest)
 		// Validation avec Zod
 		const validationResult = projectSchema.safeParse(body);
 		if (!validationResult.success) {
-			logEvent('ERROR', 'Project validation failed', userEmail, 'CREATE');
+			logEvent('ERROR', 'Project validation failed', auth.userEmail, 'CREATE');
 			return NextResponse.json(
 				{
 					success: false,
@@ -121,7 +132,7 @@ export async function POST(request: NextRequest)
 			}
 		})
 
-		logEvent('INFO', `Project created: ${project.name}`, userEmail, 'CREATE');
+		logEvent('INFO', `Project created: ${project.name}`, auth.userEmail, 'CREATE');
 
 		return NextResponse.json(
 			{
@@ -136,8 +147,8 @@ export async function POST(request: NextRequest)
 	}
 	catch (error)
 	{
-		const userEmail = request.headers.get('x-user-email');
-		logEvent('ERROR', 'Failed to create project', userEmail || undefined, 'CREATE');
+		const auth = verifyAuth(request);
+		logEvent('ERROR', 'Failed to create project', auth.userEmail, 'CREATE');
 		console.error('Erreur lors de la création du project:', error)
 		return NextResponse.json(
 			{

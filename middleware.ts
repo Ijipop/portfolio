@@ -61,14 +61,22 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Routes protégées (admin uniquement)
-  const protectedRoutes = ['/admin', '/api/projects', '/api/auth/me'];
+  const protectedRoutes = ['/admin', '/api/auth/me'];
+  
+  // Routes protégées pour les opérations d'écriture (POST, PUT, DELETE)
+  const writeProtectedRoutes = ['/api/projects'];
   
   // Vérifier si la route actuelle nécessite une authentification
   const isProtectedRoute = protectedRoutes.some(route => 
     pathname.startsWith(route)
   );
+  
+  // Vérifier si c'est une opération d'écriture sur les projets
+  const isWriteOperation = writeProtectedRoutes.some(route => 
+    pathname.startsWith(route)
+  ) && request.method !== 'GET';
 
-  if (!isProtectedRoute) {
+  if (!isProtectedRoute && !isWriteOperation) {
     return NextResponse.next();
   }
 
@@ -121,6 +129,9 @@ export function middleware(request: NextRequest) {
   requestHeaders.set('x-user-id', payload.userId.toString());
   requestHeaders.set('x-user-email', payload.email);
   requestHeaders.set('x-user-role', payload.role);
+  
+  // Log pour debug
+  console.log(`[MIDDLEWARE] Added headers: x-user-email=${payload.email}, x-user-role=${payload.role}`);
 
   return NextResponse.next({
     request: {
@@ -133,6 +144,7 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/admin/:path*',
-    '/api/projects/:path*'
+    '/api/auth/me',
+    '/api/projects'
   ]
 };
